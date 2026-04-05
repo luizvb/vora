@@ -7,8 +7,8 @@ import {
   SUPERVISOR_PROMPT 
 } from "./prompts";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "placeholder-key";
-const IS_DEV = process.env.NEXT_PUBLIC_DEV_MODE === "true" || !process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "placeholder-key";
+const IS_DEV = process.env.NEXT_PUBLIC_DEV_MODE === "true" || (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY);
 
 export const getModel = (temperature = 0) => {
   return new ChatGoogleGenerativeAI({
