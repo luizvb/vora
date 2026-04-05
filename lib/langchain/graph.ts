@@ -101,7 +101,7 @@ builder.setEntryPoint("supervisor");
 
 export const graph = builder.compile();
 
-export const runAnalysis = async (transcript: string) => {
+export const runAnalysis = async (transcript: string): Promise<AgentResponse[]> => {
   const initialState: AgentState = {
     transcript,
     nextAgent: "supervisor",
@@ -109,6 +109,6 @@ export const runAnalysis = async (transcript: string) => {
     messages: []
   };
 
-  const finalState = await graph.invoke(initialState);
+  const finalState = (await graph.invoke(initialState)) as AgentState;
   return finalState.responses;
 };

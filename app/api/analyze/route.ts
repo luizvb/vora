@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runAnalysis } from "@/lib/langchain/graph";
 import { getDb } from "@/lib/db";
+import { AgentResponse } from "@/lib/langchain/agents";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Run the multi-agent analysis
-    const responses = await runAnalysis(transcript);
+    const responses = (await runAnalysis(transcript)) as AgentResponse[];
 
     // 2. Persist to memory (pglite)
     // Note: getDb() in current implementation is client-side only (idb://)
