@@ -9,6 +9,7 @@ import {
   LINGUISTICS_PROMPT, 
   ANALYST_PROMPT 
 } from "./prompts";
+import { z } from "zod";
 
 // Define the state schema
 interface AgentState {
@@ -17,6 +18,11 @@ interface AgentState {
   responses: AgentResponse[];
   messages: BaseMessage[];
 }
+
+// Structured Output Schema for Supervisor
+const routingSchema = z.object({
+  nextAgent: z.enum(["sales", "coach", "linguistics", "analyst", "FINISH"]).describe("The next agent to call or FINISH if done.")
+});
 
 // Supervisor Node: Decides who speaks next
 const supervisorNode = async (state: AgentState, config?: RunnableConfig) => {
@@ -31,14 +37,12 @@ const supervisorNode = async (state: AgentState, config?: RunnableConfig) => {
     return { nextAgent: remaining[0] };
   }
 
-  const model = getModel();
+  const model = getModel().withStructuredOutput(routingSchema);
   const systemMessage = new SystemMessage(SUPERVISOR_PROMPT);
-  const humanMessage = new HumanMessage(`Transcript: ${state.transcript}\n\nProcessed Agents: ${state.responses.map(r => r.agent).join(", ")}. Who should speak next? Answer only with one word: sales, coach, linguistics, analyst, or FINISH.`);
+  const humanMessage = new HumanMessage(`Transcript: ${state.transcript}\n\nProcessed Agents: ${state.responses.map(r => r.agent).join(", ")}. Who should speak next?`);
   
   const response = await model.invoke([systemMessage, humanMessage]);
-  const decision = (response.content as string).trim().toUpperCase();
-  
-  return { nextAgent: decision === "FINISH" ? "FINISH" : decision.toLowerCase() };
+  return { nextAgent: response.nextAgent };
 };
 
 // Specialist Nodes

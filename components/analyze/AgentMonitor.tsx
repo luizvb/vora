@@ -3,76 +3,109 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/app/context/UserContext';
 import { Button } from '@/components/ui/button';
-import { Terminal, Shield, Target, Lightbulb, ChevronRight } from 'lucide-react';
+import { Terminal, Shield, Target, Lightbulb, ChevronRight, UserCog } from 'lucide-react';
+import { createReport } from '@/lib/report-service';
 
 interface Log {
   id: string;
-  agent: 'Linguistics' | 'Sales' | 'Coach' | 'Analyst';
+  agent: 'Linguistics' | 'Sales' | 'Coach' | 'Analyst' | 'Supervisor';
   message: string;
   timestamp: string;
 }
 
-export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
+export function AgentMonitor({ 
+  transcript, 
+  onComplete 
+}: { 
+  transcript: string;
+  onComplete: (reportId: string) => void 
+}) {
   const { role } = useUser();
   const [logs, setLogs] = useState<Log[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
-
-  const linguisticsLogs = [
-    "Scanning for filler words...",
-    "Pace detected: 145 words per minute",
-    "Sentence complexity analysis in progress...",
-    "Clarity Index: 9.4/10",
-  ];
-
-  const salesLogs = [
-    "Identifying closing signals...",
-    "Objection detected at line 42",
-    "Trial close attempt found: Success",
-    "Analyzing 'The Ask' effectiveness...",
-  ];
-
-  const coachLogs = [
-    "Rapport building assessment...",
-    "Listening vs. talking ratio calculation...",
-    "Empathy markers identified...",
-    "Personal growth suggestions generated...",
-  ];
-
-  const analystLogs = [
-    "ROI figures verification...",
-    "Business impact mapping...",
-    "Value proposition strength score...",
-    "Strategic alignment check...",
-  ];
+  const hasStarted = useRef(false);
 
   useEffect(() => {
-    let currentLogIndex = 0;
-    const allLogsTemplates = [
-      ...linguisticsLogs.map(m => ({ agent: 'Linguistics' as const, message: m })),
-      ...salesLogs.map(m => ({ agent: 'Sales' as const, message: m })),
-      ...coachLogs.map(m => ({ agent: 'Coach' as const, message: m })),
-      ...analystLogs.map(m => ({ agent: 'Analyst' as const, message: m })),
-    ].sort(() => Math.random() - 0.5);
+    if (hasStarted.current) return;
+    hasStarted.current = true;
 
-    const interval = setInterval(() => {
-      if (currentLogIndex < allLogsTemplates.length) {
-        const template = allLogsTemplates[currentLogIndex];
-        const newLog: Log = {
-          id: Math.random().toString(36).substring(7),
-          ...template,
-          timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        };
-        setLogs(prev => [...prev, newLog]);
-        currentLogIndex++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => setIsFinished(true), 1000);
+    const startStreaming = async () => {
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transcript,
+            userId: 'user_007', 
+            tenantId: 'tenant_default',
+            sessionId: crypto.randomUUID()
+          })
+        });
+
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.done) {
+                // Save the report to PGlite
+                const id = await createReport("user_007", role, transcript, data.report);
+                setReportId(id);
+                setIsFinished(true);
+                return;
+              }
+
+              if (data.error) {
+                console.error("Stream error:", data.error);
+                setIsFinished(true);
+                return;
+              }
+
+              const newLog: Log = {
+                id: Math.random().toString(36).substring(7),
+                agent: mapAgentName(data.agent),
+                message: data.status,
+                timestamp: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              };
+              setLogs(prev => [...prev, newLog]);
+            } catch (e) {
+              console.error("Error parsing stream chunk", e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Streaming failed:", error);
+        setIsFinished(true);
       }
-    }, 450); // 15 logs * 450ms = ~6.7 seconds
+    };
 
-    return () => clearInterval(interval);
-  }, [role]);
+    startStreaming();
+  }, [transcript, role]);
+
+  const mapAgentName = (name: string): Log['agent'] => {
+    const n = name.toLowerCase();
+    if (n === 'sales') return 'Sales';
+    if (n === 'coach') return 'Coach';
+    if (n === 'linguistics') return 'Linguistics';
+    if (n === 'analyst') return 'Analyst';
+    if (n === 'supervisor') return 'Supervisor';
+    return 'Supervisor';
+  };
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -86,6 +119,7 @@ export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
       case 'Sales': return <Shield className="w-3 h-3" />;
       case 'Coach': return <Lightbulb className="w-3 h-3" />;
       case 'Analyst': return <ChevronRight className="w-3 h-3" />;
+      case 'Supervisor': return <UserCog className="w-3 h-3" />;
       default: return null;
     }
   };
@@ -96,6 +130,7 @@ export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
       case 'Sales': return 'text-emerald-400';
       case 'Coach': return 'text-amber-400';
       case 'Analyst': return 'text-rose-400';
+      case 'Supervisor': return 'text-purple-400';
       default: return 'text-slate-400';
     }
   };
@@ -105,7 +140,7 @@ export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
         <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-800 flex items-center gap-2">
           <Terminal className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">Agent Monitor</span>
+          <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">Real-time Agent Monitor</span>
           <div className="flex gap-1.5 ml-auto">
             <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
@@ -127,7 +162,7 @@ export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
               <span className="text-slate-300">{log.message}</span>
             </div>
           ))}
-          {!isFinished && logs.length < 15 && (
+          {!isFinished && (
             <div className="flex gap-3 animate-pulse">
               <span className="text-slate-600">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
               <span className="text-slate-500">_</span>
@@ -136,10 +171,10 @@ export function AgentMonitor({ onComplete }: { onComplete: () => void }) {
         </div>
       </div>
 
-      {isFinished && (
+      {isFinished && reportId && (
         <div className="flex justify-center animate-in fade-in zoom-in-95 duration-500">
           <Button 
-            onClick={onComplete}
+            onClick={() => onComplete(reportId)}
             className="group h-12 px-8 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
           >
             View Full Report
