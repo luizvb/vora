@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // For local-first, this points to pglite
+}
+
+enum UserRole {
+  SALES_REP
+  SALES_MANAGER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      UserRole @default(SALES_REP)
+  reports   Report[]
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  transcript      String   @db.Text
+  overallScore    Int
+  pros            Json     // Array: { quote: string, analysis: string }
+  cons            Json     // Array: { quote: string, analysis: string }
+  linguisticStats Json     // { fillerWords: number, tone: string, talkTime: number }
+  actionPlan      Json     // Array: { title: string, description: string, priority: string }
+  metadata        Json?    // For versioning, agent-names, etc.
+  createdAt       DateTime @default(now())
+}
