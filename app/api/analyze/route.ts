@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { graph } from "@/lib/langchain/graph";
 import { getDb } from "@/lib/db";
+import { aggregateAgentResponses } from "@/lib/analysis";
 import { AgentResponse } from "@/lib/langchain/agents";
 
 export const dynamic = "force-dynamic";
@@ -56,39 +57,15 @@ export async function POST(req: Request) {
             }
           }
 
-          // 3. Aggregate results into a VORA Report structure
+          // 3. Aggregate results into a VORA Report structure using the real data
+          const analysis = aggregateAgentResponses(finalResponses, transcript);
+          
           const aggregatedReport = {
             id: crypto.randomUUID(),
             userId,
             tenantId,
             transcript,
-            overallScore: 88,
-            pros: [
-              { 
-                quote: "Handled the price objection by focusing on value", 
-                analysis: finalResponses.find(r => r.agent === "sales")?.feedback || "Sales strategy was sound." 
-              },
-              { 
-                quote: "Empathized with the client's timeline", 
-                analysis: finalResponses.find(r => r.agent === "coach")?.feedback || "Great emotional intelligence." 
-              }
-            ],
-            cons: [
-              { 
-                quote: "Missed the opportunity to ask for a referral", 
-                analysis: "Always close with a forward-looking request." 
-              }
-            ],
-            linguisticStats: {
-              fillerWords: finalResponses.find(r => r.agent === "linguistics")?.metrics?.fillerWords || 0,
-              tone: finalResponses.find(r => r.agent === "linguistics")?.metrics?.pace || "Professional",
-              talkTime: 65
-            },
-            actionPlan: [
-              { title: "Review ROI Deck", description: "Prepare specific slides for the next call.", priority: 'high' },
-              { title: "Slow Down Pace", description: "Try to maintain 140 wpm.", priority: 'medium' },
-              { title: "Send Follow-up", description: "Summarize the key points discussed.", priority: 'low' }
-            ],
+            ...analysis,
             agentDetails: finalResponses,
             createdAt: new Date().toISOString()
           };

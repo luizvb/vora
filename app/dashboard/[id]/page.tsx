@@ -26,9 +26,14 @@ export default function DashboardDetailPage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     async function load() {
-      const data = await getReportById(id);
-      setReport(data);
-      setLoading(false);
+      try {
+        const data = await getReportById(id);
+        setReport(data);
+      } catch (err) {
+        console.error("Failed to load report", err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [id]);
@@ -44,6 +49,7 @@ export default function DashboardDetailPage({ params }: { params: Promise<{ id: 
     );
   }
 
+  // If not loading and no report, show not found
   if (!report) {
     return (
       <div className="flex-1 min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white px-4">
@@ -51,7 +57,7 @@ export default function DashboardDetailPage({ params }: { params: Promise<{ id: 
           <AlertCircle className="w-16 h-16" />
         </div>
         <h1 className="text-2xl font-bold mb-4 text-slate-100">Report Not Found</h1>
-        <p className="text-slate-400 mb-8 text-center max-w-md">We couldn't find the requested report. It might have been deleted or doesn't exist.</p>
+        <p className="text-slate-400 mb-8 text-center max-w-md">We couldn't find report {id}. It might have been deleted or doesn't exist.</p>
         <Button variant="outline" onClick={() => router.push('/analyze')} className="border-slate-800 text-slate-300 hover:bg-slate-900">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Analysis
         </Button>

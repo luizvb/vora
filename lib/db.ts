@@ -3,10 +3,11 @@ import { PGlite } from "@electric-sql/pglite";
 let dbInstance: any = null;
 
 export async function getDb() {
-  if (typeof window === 'undefined') return null; // Only for client-side as per pglite usage in this project
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') return null;
   
   if (!dbInstance) {
-    dbInstance = new PGlite("idb://vora-db");
+    const connectionString = process.env.NODE_ENV === 'test' ? "memory://" : "idb://vora-db";
+    dbInstance = new PGlite(connectionString);
     // Initialize schema matching schema.prisma
     await dbInstance.exec(`
       CREATE TABLE IF NOT EXISTS "User" (

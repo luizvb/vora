@@ -21,8 +21,8 @@ export default function OnboardingPage() {
 
   if (selected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background">
-        <CheckCircle2 className="w-20 h-20 text-accent mb-6 animate-in zoom-in duration-500" />
+      <div className="flex flex-col items-center justify-center h-full min-h-screen p-8 bg-slate-950">
+        <CheckCircle2 className="w-20 h-20 text-indigo-500 mb-6 animate-in zoom-in duration-500" />
         <h1 className="text-4xl font-bold mb-4">You're all set!</h1>
         <p className="text-xl text-muted-foreground mb-12 max-w-md text-center">
           As a {selected === 'SALES_REP' ? 'Sales Rep' : 'Sales Manager'}, we've tailored the coaching engine for you.
@@ -35,8 +35,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background">
-      <h1 className="text-3xl font-bold mb-12 text-center">Who are you?</h1>
+    <div className="flex flex-col items-center justify-center h-full min-h-screen p-8 bg-slate-950">
+      <h1 className="text-3xl font-bold mb-12 text-center text-white">Who are you?</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
         <Card 
           className="cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 p-6 group flex flex-col items-center text-center"

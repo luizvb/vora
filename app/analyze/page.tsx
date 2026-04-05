@@ -21,7 +21,7 @@ export default function AnalyzePage() {
 
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-4 py-20 bg-slate-950">
-      <div className="w-full max-w-4xl space-y-12">
+      <div className="w-full max-w-4xl space-y-12 py-10">
         {!isAnalyzing ? (
           <>
             <div className="text-center space-y-4">

@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 
 import { UserProvider } from "./context/UserContext";
 
+import { Sidebar } from "@/components/Sidebar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,8 +31,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full dark antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <UserProvider>{children}</UserProvider>
+      <body className="h-full flex bg-slate-950 text-foreground overflow-hidden">
+        <UserProvider>
+          <Sidebar />
+          <div className="flex-1 flex flex-col overflow-y-auto">
+            {children}
+          </div>
+        </UserProvider>
       </body>
     </html>
   );
