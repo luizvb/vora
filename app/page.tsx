@@ -13,9 +13,11 @@ export default function LandingPage() {
         The Vocal Oracle. Transforming raw sales transcripts into actionable coaching insights in under 60 seconds.
       </p>
       <div className="flex gap-4">
-        <Button asChild size="lg" className="px-8 text-lg font-medium">
-          <Link href="/onboarding">Get Started</Link>
-        </Button>
+        <Link href="/onboarding">
+          <Button size="lg" className="px-8 text-lg font-medium cursor-pointer">
+            Get Started
+          </Button>
+        </Link>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-24 max-w-4xl w-full text-left">

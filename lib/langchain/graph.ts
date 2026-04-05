@@ -109,6 +109,6 @@ export const runAnalysis = async (transcript: string): Promise<AgentResponse[]> 
     messages: []
   };
 
-  const finalState = (await graph.invoke(initialState)) as AgentState;
+  const finalState = (await graph.invoke(initialState as any)) as any;
   return finalState.responses;
 };

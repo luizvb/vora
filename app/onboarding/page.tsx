@@ -27,8 +27,8 @@ export default function OnboardingPage() {
         <p className="text-xl text-muted-foreground mb-12 max-w-md text-center">
           As a {selected === 'SALES_REP' ? 'Sales Rep' : 'Sales Manager'}, we've tailored the coaching engine for you.
         </p>
-        <Button asChild size="lg">
-          <Link href="/analyze">Start Analysis</Link>
+        <Button size="lg" onClick={() => router.push('/analyze')}>
+          Start Analysis
         </Button>
       </div>
     );

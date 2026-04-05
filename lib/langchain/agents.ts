@@ -12,7 +12,7 @@ const IS_DEV = process.env.NEXT_PUBLIC_DEV_MODE === "true" || !process.env.GOOGL
 
 export const getModel = (temperature = 0) => {
   return new ChatGoogleGenerativeAI({
-    modelName: "gemini-1.5-flash",
+    model: "gemini-1.5-flash",
     apiKey: GOOGLE_API_KEY,
     temperature,
   });
