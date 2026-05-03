@@ -6,9 +6,19 @@ import { Upload, FileText } from 'lucide-react';
 
 interface AnalyzeFormProps {
   onAnalyze: (transcript: string) => void;
+  uploadTitle?: string;
+  uploadSubtitle?: string;
+  placeholder?: string;
+  submitLabel?: string;
 }
 
-export function AnalyzeForm({ onAnalyze }: AnalyzeFormProps) {
+export function AnalyzeForm({
+  onAnalyze,
+  uploadTitle = 'Drop your transcript here',
+  uploadSubtitle = 'Supports .txt files',
+  placeholder = 'Or paste your transcript here...',
+  submitLabel = 'Analyze Transcript',
+}: AnalyzeFormProps) {
   const [transcript, setTranscript] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,16 +60,16 @@ export function AnalyzeForm({ onAnalyze }: AnalyzeFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-5">
       <div
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         onClick={() => fileInputRef.current?.click()}
         className={`
-          relative border-2 border-dashed rounded-xl p-8 transition-all cursor-pointer
+          relative border-2 border-dashed rounded-[11px] p-8 transition-all cursor-pointer
           flex flex-col items-center justify-center gap-3
-          ${isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}
+          ${isDragging ? 'border-[#3B8FD4] bg-[#EBF4FF]' : 'border-[#DCE4EA] bg-[#F5F9FF] hover:border-[#3B8FD4]/60'}
         `}
       >
         <input
@@ -69,33 +79,33 @@ export function AnalyzeForm({ onAnalyze }: AnalyzeFormProps) {
           accept=".txt"
           className="hidden"
         />
-        <div className="p-3 rounded-full bg-primary/10 text-primary">
+        <div className="rounded-full bg-[#EBF4FF] p-3 text-[#1E4A6E]">
           <Upload className="w-6 h-6" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium">Drop your transcript here</p>
-          <p className="text-xs text-muted-foreground mt-1">Supports .txt files</p>
+          <p className="text-sm font-semibold text-[#1A2530]">{uploadTitle}</p>
+          <p className="mt-1 text-xs text-[#607080]">{uploadSubtitle}</p>
         </div>
       </div>
 
       <div className="relative">
-        <div className="absolute left-4 top-4 text-muted-foreground">
+        <div className="absolute left-4 top-4 text-[#9AABB8]">
           <FileText className="w-4 h-4" />
         </div>
         <textarea
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
-          placeholder="Or paste your transcript here..."
-          className="w-full h-48 bg-slate-900/50 border border-border rounded-xl p-4 pl-12 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all resize-none"
+          placeholder={placeholder}
+          className="h-48 w-full resize-none rounded-[11px] border border-[#DCE4EA] bg-white p-4 pl-12 text-sm text-[#1A2530] transition-all placeholder:text-[#9AABB8] focus:border-[#3B8FD4] focus:outline-none"
         />
       </div>
 
       <Button
         type="submit"
         disabled={!transcript.trim()}
-        className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20"
+        className="h-12 w-full rounded-[9px] bg-[#1E4A6E] text-base font-semibold text-white shadow-none hover:bg-[#2B6CB0]"
       >
-        Analyze Transcript
+        {submitLabel}
       </Button>
     </form>
   );

@@ -1,286 +1,160 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Trophy, 
-  Target, 
-  Mic2, 
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Zap,
-  Ear
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useUser } from '@/app/context/UserContext';
-import { getReportById, Report } from '@/lib/report-service';
+import { use, useEffect, useState } from "react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Download, Target } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle, CaasyLogo, InsightQuote } from "@/components/caasy/CaasyPrimitives";
+import { getReportById, Report } from "@/lib/report-service";
+import { useUser } from "@/app/context/UserContext";
 
 export default function DashboardDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { role } = useUser();
   const router = useRouter();
+  const { isAuthenticated, isAuthLoading } = useUser();
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isAuthenticated) {
+      router.replace("/");
+      return;
+    }
+
     async function load() {
       try {
-        const data = await getReportById(id);
-        setReport(data);
-      } catch (err) {
-        console.error("Failed to load report", err);
+        setReport(await getReportById(id));
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [id]);
+  }, [id, isAuthenticated, isAuthLoading, router]);
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-screen flex items-center justify-center bg-slate-950 text-white">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-medium tracking-wide">Scanning database for insights...</p>
+      <main className="flex min-h-screen items-center justify-center bg-[#F2F5F7] text-[#607080]">
+        <div className="text-center">
+          <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-[#DCE4EA] border-t-[#3B8FD4]" />
+          <p className="text-xs font-semibold uppercase tracking-[1.6px]">Loading CaaSy report</p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  // If not loading and no report, show not found
   if (!report) {
     return (
-      <div className="flex-1 min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white px-4">
-        <div className="p-4 rounded-full bg-red-500/10 text-red-400 mb-6">
-          <AlertCircle className="w-16 h-16" />
-        </div>
-        <h1 className="text-2xl font-bold mb-4 text-slate-100">Report Not Found</h1>
-        <p className="text-slate-400 mb-8 text-center max-w-md">We couldn't find report {id}. It might have been deleted or doesn't exist.</p>
-        <Button variant="outline" onClick={() => router.push('/analyze')} className="border-slate-800 text-slate-300 hover:bg-slate-900">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Analysis
-        </Button>
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#F2F5F7] p-6">
+        <Card className="max-w-md text-center">
+          <AlertCircle className="mx-auto mb-4 size-12 text-[#C03030]" />
+          <h1 className="font-display text-3xl">Report not found</h1>
+          <p className="mt-2 text-sm text-[#607080]">We could not find report {id}.</p>
+          <Button onClick={() => router.push("/dashboard?role=individual&view=home")} className="mt-6 bg-[#1E4A6E] text-white">
+            <ArrowLeft className="mr-2 size-4" /> Back to CaaSy
+          </Button>
+        </Card>
+      </main>
     );
   }
 
-  // Circular Gauge Component
-  const CircularGauge = ({ value }: { value: number }) => {
-    const radius = 70;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (value / 100) * circumference;
-    
-    return (
-      <div className="relative flex items-center justify-center w-48 h-48">
-        <svg className="transform -rotate-90 w-48 h-48">
-          <circle
-            cx="96"
-            cy="96"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="12"
-            fill="transparent"
-            className="text-slate-800"
-          />
-          <circle
-            cx="96"
-            cy="96"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="12"
-            fill="transparent"
-            strokeDasharray={circumference}
-            style={{ strokeDashoffset: offset }}
-            strokeLinecap="round"
-            className="text-indigo-500 transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-5xl font-black text-white">{value}</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">Score</span>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <main className="flex-1 bg-slate-950 min-h-screen pb-20 pt-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-10">
-        
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-10 bg-slate-900/40 border border-slate-800/50 p-10 rounded-[32px] backdrop-blur-sm shadow-2xl">
-          <div className="space-y-6 text-center md:text-left flex-1">
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-                {role === 'SALES_MANAGER' ? 'Manager View' : 'Representative View'}
+    <main className="min-h-screen bg-[#F2F5F7]">
+      <header className="flex h-[52px] items-center justify-between border-b border-[#E4E9ED] bg-white px-6">
+        <div className="rounded-md bg-[#1E4A6E] px-3 py-2"><CaasyLogo tagline="Coaching Intelligence" /></div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#EBF4FF] px-2.5 py-1 text-[10px] font-semibold text-[#1E4A6E]">{report.mode === "coach_me" ? "Coaching Session" : "Call Report"}</span>
+          <span className="text-[11px] text-[#9AABB8]">CaaSy</span>
+        </div>
+      </header>
+      <div className="mx-auto max-w-[1080px] space-y-3 p-5">
+        <div className="grid grid-cols-[1fr_260px] gap-3">
+          <Card className="bg-linear-to-br from-[#1E4A6E] to-[#2B6CB0] text-white">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[1px]">Analysis complete</div>
+                <h1 className="font-display text-4xl leading-tight">{report.mode === "coach_me" ? "CaaSy Coaching Session Report" : "CaaSy Call Coaching Report"}</h1>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">{report.actionPlan[0]?.description || "This report is based on your saved AI coaching session."}</p>
               </div>
-              <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-                Analysis Complete
+              <div className="rounded-[18px] border border-white/15 bg-white/10 p-5 text-center">
+                <div className="font-display text-6xl leading-none">{report.overallScore}</div>
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[1.4px] text-white/55">Score</div>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-none">
-              VORA <span className="text-indigo-500">Results</span> Dashboard
-            </h1>
-            <p className="text-slate-400 text-lg leading-relaxed max-w-xl">
-              Based on our agent scan, your call shows high engagement but needs focus on technical closing signals.
-            </p>
-            <div className="flex items-center gap-4 pt-4 justify-center md:justify-start">
-              <Button onClick={() => router.push('/analyze')} variant="outline" className="border-slate-800 hover:bg-slate-800 h-11 px-6 rounded-xl font-bold text-slate-300">
-                <ArrowLeft className="w-4 h-4 mr-2" /> New Scan
-              </Button>
-              <Button className="bg-white hover:bg-slate-200 text-black h-11 px-6 rounded-xl font-bold">
-                Download PDF
-              </Button>
-            </div>
-          </div>
-          <div className="flex-shrink-0 flex flex-col items-center gap-4 bg-slate-950/50 p-6 rounded-[24px] border border-slate-800/50">
-            <CircularGauge value={report.overallScore} />
-            <div className="flex items-center gap-2 text-emerald-400 text-sm font-bold bg-emerald-400/10 px-3 py-1 rounded-lg">
-              <TrendingUp className="w-4 h-4" />
-              +12% vs last call
-            </div>
-          </div>
+          </Card>
+          <Card>
+            <CardTitle>Actions</CardTitle>
+            <Button onClick={() => router.push(`/dashboard?role=individual&view=${report.mode === "coach_me" ? "coach-me" : "coach-call"}`)} className="mb-2 w-full bg-[#1E4A6E] text-white">
+              <ArrowLeft className="mr-2 size-4" /> New session
+            </Button>
+            <Button disabled variant="outline" className="w-full">
+              <Download className="mr-2 size-4" /> PDF coming soon
+            </Button>
+          </Card>
         </div>
 
-        {/* Linguistic Breakdown Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/40 border border-slate-800/50 p-8 rounded-[24px] group hover:border-indigo-500/30 transition-all duration-300">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400">
-                <Mic2 className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Filler Words</p>
-                <p className="text-2xl font-black text-white">{report.linguisticStats.fillerWords}</p>
-              </div>
-            </div>
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (report.linguisticStats.fillerWords / 50) * 100)}%` }} />
-            </div>
-            <p className="text-xs text-slate-400 mt-3 font-medium tracking-wide">Industry average: 12 per 10m</p>
-          </div>
-
-          <div className="bg-slate-900/40 border border-slate-800/50 p-8 rounded-[24px] group hover:border-indigo-500/30 transition-all duration-300">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">
-                <Zap className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tone Analysis</p>
-                <p className="text-2xl font-black text-white">{report.linguisticStats.tone}</p>
-              </div>
-            </div>
-            <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className={`flex-1 h-2 rounded-full ${i <= 4 ? 'bg-blue-500' : 'bg-slate-800'}`} />
-                ))}
-            </div>
-            <p className="text-xs text-slate-400 mt-3 font-medium tracking-wide">94% Confidence matched</p>
-          </div>
-
-          <div className="bg-slate-900/40 border border-slate-800/50 p-8 rounded-[24px] group hover:border-indigo-500/30 transition-all duration-300">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400">
-                <Ear className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Talk Ratio</p>
-                <p className="text-2xl font-black text-white">{report.linguisticStats.talkTime}% / {100 - report.linguisticStats.talkTime}%</p>
-              </div>
-            </div>
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
-                <div className="bg-indigo-500 h-full" style={{ width: `${report.linguisticStats.talkTime}%` }} />
-            </div>
-            <div className="flex justify-between mt-3">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">You</span>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Customer</span>
-            </div>
-          </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Metric title="Filler words" value={String(report.linguisticStats.fillerWords)} detail="From this saved session" />
+          <Metric title="Tone analysis" value={report.linguisticStats.tone} detail="Generated by the AI agents" />
+          <Metric title="Talk ratio" value={`${report.linguisticStats.talkTime}% / ${100 - report.linguisticStats.talkTime}%`} detail="Speaker balance estimate" />
         </div>
 
-        {/* Feedback Cards Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-xl font-bold text-white tracking-tight">Winning Moments</h3>
-            </div>
-            {report.pros.map((pro, i) => (
-              <div key={i} className="bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-2xl space-y-4 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardTitle>Winning moments</CardTitle>
+            <div className="space-y-4">
+              {report.pros.map((pro, index) => (
+                <div key={index} className="rounded-lg border border-[#1D8A5E]/15 bg-[#E6F5EE]/60 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#1D8A5E]"><CheckCircle2 className="size-4" /> Insight</div>
+                  <InsightQuote>{pro.quote}</InsightQuote>
+                  <p className="mt-3 text-sm leading-6 text-[#607080]">{pro.analysis}</p>
                 </div>
-                <p className="text-emerald-400 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-emerald-400" /> Insight
-                </p>
-                <blockquote className="text-slate-300 font-medium italic border-l-2 border-emerald-500/30 pl-4 py-1">
-                  "{pro.quote}"
-                </blockquote>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {pro.analysis}
-                </p>
+              ))}
+            </div>
+          </Card>
+          <Card>
+            <CardTitle>Growth areas</CardTitle>
+            <div className="space-y-4">
+              {report.cons.map((con, index) => (
+                <div key={index} className="rounded-lg border border-[#3B8FD4]/15 bg-[#EBF4FF]/70 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#1E4A6E]"><Target className="size-4" /> Focus needed</div>
+                  <InsightQuote>{con.quote}</InsightQuote>
+                  <p className="mt-3 text-sm leading-6 text-[#607080]">{con.analysis}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card>
+          <CardTitle>Action plan</CardTitle>
+          <div className="grid grid-cols-3 gap-3">
+            {report.actionPlan.map((action, index) => (
+              <div key={action.title} className="relative rounded-lg border border-[#E4E9ED] bg-[#F5F9FF] p-4">
+                <div className="mb-2 font-display text-4xl text-[#3B8FD4]/25">0{index + 1}</div>
+                <div className="pr-16 text-sm font-semibold text-[#1A2530]">{action.title}</div>
+                <p className="mt-2 text-xs leading-5 text-[#607080]">{action.description}</p>
+                <span className="absolute right-3 top-3 rounded bg-[#FFF4E3] px-2 py-1 text-[9px] font-bold uppercase text-[#C8892A]">{action.priority}</span>
               </div>
             ))}
           </div>
+        </Card>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-xl font-bold text-white tracking-tight">Growth Areas</h3>
-            </div>
-            {report.cons.map((con, i) => (
-              <div key={i} className="bg-indigo-500/5 border border-indigo-500/10 p-6 rounded-2xl space-y-4 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <Target className="w-12 h-12 text-indigo-400" />
-                </div>
-                <p className="text-indigo-400 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-indigo-400" /> Focus Needed
-                </p>
-                <blockquote className="text-slate-300 font-medium italic border-l-2 border-indigo-500/30 pl-4 py-1">
-                  "{con.quote}"
-                </blockquote>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {con.analysis}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Plan Section */}
-        <div className="bg-slate-900/60 border border-slate-800 p-10 rounded-[32px] space-y-8 shadow-inner">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                <Target className="w-7 h-7 text-indigo-500" /> Action Plan
-              </h2>
-              <p className="text-slate-500 text-sm font-medium uppercase tracking-widest">Top 3 priorities for your next call</p>
-            </div>
-            <div className="hidden sm:flex -space-x-3">
-                {[1, 2, 3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-500">
-                        A{i}
-                    </div>
-                ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {report.actionPlan.map((action, i) => (
-              <div key={i} className="bg-slate-950/50 border border-slate-800 p-6 rounded-2xl relative group hover:bg-slate-900/50 transition-all duration-300">
-                <div className={`absolute top-4 right-4 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${action.priority === 'high' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                    {action.priority}
-                </div>
-                <div className="text-indigo-500 font-black text-4xl opacity-20 mb-2">0{i+1}</div>
-                <h4 className="text-white font-bold mb-2 pr-12">{action.title}</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {action.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardTitle>Original input</CardTitle>
+          <p className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-[#E4E9ED] bg-[#F5F9FF] p-4 text-xs leading-6 text-[#607080]">{report.transcript}</p>
+        </Card>
       </div>
     </main>
+  );
+}
+
+function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return (
+    <Card>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.9px] text-[#9AABB8]">{title}</div>
+      <div className="mt-2 font-display text-3xl text-[#1A2530]">{value}</div>
+      <div className="mt-1 text-[10px] font-semibold text-[#2B6CB0]">{detail}</div>
+    </Card>
   );
 }

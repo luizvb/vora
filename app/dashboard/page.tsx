@@ -1,18 +1,10 @@
-'use client';
+import { CaasyDashboard } from "@/components/caasy/CaasyDashboard";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function DashboardRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/analyze');
-  }, [router]);
-
-  return (
-    <div className="flex-1 flex items-center justify-center bg-slate-950 text-slate-500 font-mono text-xs uppercase tracking-widest">
-      Redirecting to analysis...
-    </div>
-  );
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; view?: string }>;
+}) {
+  const params = await searchParams;
+  return <CaasyDashboard initialRole={params.role} initialView={params.view} />;
 }

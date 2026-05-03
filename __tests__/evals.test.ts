@@ -3,21 +3,21 @@ import { runAnalysis } from '../lib/langchain/graph';
 import fs from 'fs';
 import path from 'path';
 
-// VORA LLM Eval Suite
+// CaaSy LLM Eval Suite
 // ------------------
 // WARNING: This test calls the real Gemini API. 
 // It is used to validate the quality of the agents' reasoning.
 
-const LOG_FILE = path.join(process.cwd(), 'VORA_EVALS.log');
+const LOG_FILE = path.join(process.cwd(), 'CaaSy_EVALS.log');
 
-function logEval(title: string, content: any) {
+function logEval(title: string, content: unknown) {
   const timestamp = new Date().toISOString();
   const entry = `\n[${timestamp}] === ${title} ===\n${content}\n${'='.repeat(50)}\n`;
   fs.appendFileSync(LOG_FILE, entry);
   console.log(entry);
 }
 
-describe('VORA LLM Quality Evals (Real API)', () => {
+describe('CaaSy LLM Quality Evals (Real API)', () => {
   // Clear log file at start
   if (fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, '');
 

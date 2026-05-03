@@ -1,5 +1,4 @@
 import { StateGraph, END } from "@langchain/langgraph";
-import { RunnableConfig } from "@langchain/core/runnables";
 import { BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModel, MOCK_RESPONSES, isMockMode, AgentResponse } from "./agents";
 import { 
@@ -24,8 +23,22 @@ const routingSchema = z.object({
   nextAgent: z.enum(["sales", "coach", "linguistics", "analyst", "FINISH"]).describe("The next agent to call or FINISH if done.")
 });
 
+const specialistSchema = z.object({
+  feedback: z.string().describe("Concise, actionable coaching feedback from this specialist."),
+  metrics: z.object({
+    closeProbability: z.number().optional(),
+    missedAsks: z.number().optional(),
+    rapportScore: z.number().optional(),
+    listeningRatio: z.number().optional(),
+    fillerWords: z.number().optional(),
+    pace: z.string().optional(),
+    valueStrength: z.number().optional(),
+    pricingObjections: z.number().optional(),
+  }).describe("Numeric and categorical metrics found by this specialist.")
+});
+
 // Supervisor Node: Decides who speaks next
-const supervisorNode = async (state: AgentState, config?: RunnableConfig) => {
+const supervisorNode = async (state: AgentState) => {
   if (isMockMode()) {
     const agents = ["sales", "coach", "linguistics", "analyst"];
     const completed = state.responses.map(r => r.agent);
@@ -47,7 +60,7 @@ const supervisorNode = async (state: AgentState, config?: RunnableConfig) => {
 
 // Specialist Nodes
 const createSpecialistNode = (agentName: string, prompt: string) => {
-  return async (state: AgentState, config?: RunnableConfig) => {
+  return async (state: AgentState) => {
     if (isMockMode()) {
       return { 
         responses: [...state.responses, MOCK_RESPONSES[agentName]],
@@ -55,20 +68,17 @@ const createSpecialistNode = (agentName: string, prompt: string) => {
       };
     }
 
-    const model = getModel();
+    const model = getModel().withStructuredOutput(specialistSchema);
     const systemMessage = new SystemMessage(prompt);
-    const humanMessage = new HumanMessage(`Analyze this transcript: ${state.transcript}`);
-    
-    // We want structured output, but for now we'll keep it simple or use function calling
-    // Gemini supports tool calling, but for this task I'll just parse the output or use simple schema
+    const humanMessage = new HumanMessage(
+      `Analyze this transcript and return structured feedback plus metrics. Transcript: ${state.transcript}`
+    );
     const response = await model.invoke([systemMessage, humanMessage]);
-    
-    // Simple mock-like parsing for demonstration if not mock mode
-    // In production, we'd use StructuredOutputParser or similar
+
     const result: AgentResponse = {
       agent: agentName,
-      feedback: response.content as string,
-      metrics: {} // LLM would normally populate this via tool calling
+      feedback: response.feedback,
+      metrics: normalizeMetrics(agentName, response.metrics)
     };
 
     return { 
@@ -77,6 +87,40 @@ const createSpecialistNode = (agentName: string, prompt: string) => {
     };
   };
 };
+
+function normalizeMetrics(agentName: string, metrics: z.infer<typeof specialistSchema>["metrics"]) {
+  if (agentName === "sales") {
+    return {
+      closeProbability: numberMetric(metrics.closeProbability, 65),
+      missedAsks: numberMetric(metrics.missedAsks, 0),
+      ...metrics,
+    };
+  }
+  if (agentName === "linguistics") {
+    return {
+      fillerWords: numberMetric(metrics.fillerWords, 0),
+      pace: stringMetric(metrics.pace, "Professional"),
+      rapportScore: numberMetric(metrics.rapportScore, 80),
+      ...metrics,
+    };
+  }
+  if (agentName === "coach") {
+    return {
+      rapportScore: numberMetric(metrics.rapportScore, 80),
+      listeningRatio: numberMetric(metrics.listeningRatio, 50),
+      ...metrics,
+    };
+  }
+  return metrics;
+}
+
+function numberMetric(value: unknown, fallback: number) {
+  return typeof value === "number" ? value : fallback;
+}
+
+function stringMetric(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
+}
 
 // Build the graph
 const builder = new StateGraph<AgentState>({
@@ -113,6 +157,6 @@ export const runAnalysis = async (transcript: string): Promise<AgentResponse[]> 
     messages: []
   };
 
-  const finalState = (await graph.invoke(initialState as any)) as any;
+  const finalState = (await graph.invoke({ ...initialState })) as unknown as AgentState;
   return finalState.responses;
 };

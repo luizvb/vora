@@ -1,11 +1,4 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { 
-  SALES_PROMPT, 
-  COACH_PROMPT, 
-  LINGUISTICS_PROMPT, 
-  ANALYST_PROMPT, 
-  SUPERVISOR_PROMPT 
-} from "./prompts";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "placeholder-key";
 const IS_DEV = process.env.NEXT_PUBLIC_DEV_MODE === "true" || (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY);
@@ -21,7 +14,7 @@ export const getModel = (temperature = 0) => {
 export interface AgentResponse {
   agent: string;
   feedback: string;
-  metrics: Record<string, any>;
+  metrics: Record<string, unknown>;
 }
 
 // Mock responses for deterministic dev mode

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { graph } from "@/lib/langchain/graph";
-import { getDb } from "@/lib/db";
 import { aggregateAgentResponses } from "@/lib/analysis";
 import { AgentResponse } from "@/lib/langchain/agents";
 
@@ -8,7 +7,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { transcript, userId, tenantId, sessionId } = await req.json();
+    const { transcript, userId, tenantId } = (await req.json()) as {
+      transcript?: string;
+      userId?: string;
+      tenantId?: string;
+    };
 
     if (!transcript) {
       return NextResponse.json({ error: "Transcript is required" }, { status: 400 });
@@ -18,7 +21,7 @@ export async function POST(req: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        const sendEvent = (data: any) => {
+        const sendEvent = (data: Record<string, unknown>) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         };
 
@@ -34,8 +37,9 @@ export async function POST(req: Request) {
           let finalResponses: AgentResponse[] = [];
 
           for await (const event of eventStream) {
-            const nodeName = Object.keys(event)[0];
-            const nodeOutput = event[nodeName];
+            const eventRecord = event as Record<string, { nextAgent?: string; responses?: AgentResponse[] }>;
+            const nodeName = Object.keys(eventRecord)[0];
+            const nodeOutput = eventRecord[nodeName];
 
             if (nodeName === "supervisor") {
               if (nodeOutput.nextAgent && nodeOutput.nextAgent !== "FINISH") {
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
             }
           }
 
-          // 3. Aggregate results into a VORA Report structure using the real data
+          // 3. Aggregate results into a CaaSy report structure using the real data
           const analysis = aggregateAgentResponses(finalResponses, transcript);
           
           const aggregatedReport = {
@@ -72,9 +76,9 @@ export async function POST(req: Request) {
 
           sendEvent({ done: true, report: aggregatedReport });
           controller.close();
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Analysis Stream Error:", error);
-          sendEvent({ error: typeof error === 'string' ? error : error.message || "Unknown stream error" });
+          sendEvent({ error: getErrorMessage(error) });
           controller.close();
         }
       }
@@ -87,8 +91,14 @@ export async function POST(req: Request) {
         "Connection": "keep-alive",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Analysis Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
+}
+
+function getErrorMessage(error: unknown) {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  return "Unknown stream error";
 }

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { aggregateAgentResponses } from '../lib/analysis';
 
-describe('VORA Feature-by-Feature Analysis Tests', () => {
+describe('CaaSy Feature-by-Feature Analysis Tests', () => {
   const mockTranscript = "Transcript: User: Hi, I'm interested in the product but the price is a bit high. Sales: I understand, let's look at the ROI.";
 
   describe('Sales Feature (Closing Probability & Strategy)', () => {

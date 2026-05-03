@@ -1,4 +1,5 @@
 import { UserRole } from "@/app/context/UserContext";
+import type { AgentResponse } from "@/lib/langchain/agents";
 
 export interface AnalysisResult {
   overallScore: number;
@@ -12,15 +13,16 @@ export interface AnalysisResult {
   actionPlan: { title: string; description: string; priority: 'high' | 'medium' | 'low' }[];
 }
 
-export function aggregateAgentResponses(responses: any[], transcript: string): AnalysisResult {
+export function aggregateAgentResponses(responses: AgentResponse[], _transcript: string): AnalysisResult {
+  void _transcript;
   const sales = responses.find(r => r.agent === 'sales');
   const coach = responses.find(r => r.agent === 'coach');
   const linguistics = responses.find(r => r.agent === 'linguistics');
   const analyst = responses.find(r => r.agent === 'analyst');
 
   // Unified score calculation
-  const scoreBase = linguistics?.metrics?.rapportScore || 80;
-  const closeProb = sales?.metrics?.closeProbability || 50;
+  const scoreBase = scoreMetric(linguistics?.metrics.rapportScore, 80);
+  const closeProb = scoreMetric(sales?.metrics.closeProbability, 50);
   const overallScore = Math.round((scoreBase + closeProb) / 2);
 
   return {
@@ -46,8 +48,8 @@ export function aggregateAgentResponses(responses: any[], transcript: string): A
       }
     ],
     linguisticStats: {
-      fillerWords: linguistics?.metrics?.fillerWords || 0,
-      tone: linguistics?.metrics?.pace || "Professional",
+      fillerWords: numberMetric(linguistics?.metrics.fillerWords, 0),
+      tone: stringMetric(linguistics?.metrics.pace, "Professional"),
       talkTime: 50 // Default
     },
     actionPlan: [
@@ -114,4 +116,19 @@ export function simulateAnalysis(transcript: string, role: UserRole): AnalysisRe
       { title: "Closing Techniques", description: "Try to secure a follow-up date earlier in the call.", priority: 'high' }
     ]
   };
+}
+
+function numberMetric(value: unknown, fallback: number) {
+  return typeof value === "number" ? value : fallback;
+}
+
+function scoreMetric(value: unknown, fallback: number) {
+  if (typeof value !== "number") return fallback;
+  if (value <= 1) return Math.round(value * 100);
+  if (value <= 5) return Math.round(value * 20);
+  return Math.round(Math.min(value, 100));
+}
+
+function stringMetric(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
 }

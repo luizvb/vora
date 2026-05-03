@@ -13,17 +13,30 @@ interface Log {
   timestamp: string;
 }
 
+const mapAgentName = (name: string): Log['agent'] => {
+  const n = name.toLowerCase();
+  if (n === 'sales') return 'Sales';
+  if (n === 'coach') return 'Coach';
+  if (n === 'linguistics') return 'Linguistics';
+  if (n === 'analyst') return 'Analyst';
+  if (n === 'supervisor') return 'Supervisor';
+  return 'Supervisor';
+};
+
 export function AgentMonitor({ 
   transcript, 
-  onComplete 
+  onComplete,
+  mode = "coach_call",
 }: { 
   transcript: string;
-  onComplete: (reportId: string) => void 
+  onComplete: (reportId: string) => void;
+  mode?: "coach_call" | "coach_me";
 }) {
-  const { role } = useUser();
+  const { role, user } = useUser();
   const [logs, setLogs] = useState<Log[]>([]);
   const [isFinished, setIsFinished] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const hasStarted = useRef(false);
 
@@ -33,16 +46,23 @@ export function AgentMonitor({
 
     const startStreaming = async () => {
       try {
+        if (!user) {
+          throw new Error("You must be signed in to start a coaching session.");
+        }
+
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             transcript,
-            userId: 'user_007', 
-            tenantId: 'tenant_default',
+            userId: user.id,
             sessionId: crypto.randomUUID()
           })
         });
+
+        if (!response.ok) {
+          throw new Error(`Analysis request failed with status ${response.status}.`);
+        }
 
         if (!response.body) return;
 
@@ -63,15 +83,14 @@ export function AgentMonitor({
               const data = JSON.parse(line.slice(6));
               
               if (data.done) {
-                // Save the report to PGlite
-                const id = await createReport("user_007", role, transcript, data.report);
+                const id = await createReport(user.id, role, transcript, data.report, mode);
                 setReportId(id);
                 setIsFinished(true);
                 return;
               }
 
               if (data.error) {
-                console.error("Stream error:", data.error);
+                setErrorMessage(data.error);
                 setIsFinished(true);
                 return;
               }
@@ -89,23 +108,13 @@ export function AgentMonitor({
           }
         }
       } catch (error) {
-        console.error("Streaming failed:", error);
+        setErrorMessage(error instanceof Error ? error.message : "The coaching session failed.");
         setIsFinished(true);
       }
     };
 
     startStreaming();
-  }, [transcript, role]);
-
-  const mapAgentName = (name: string): Log['agent'] => {
-    const n = name.toLowerCase();
-    if (n === 'sales') return 'Sales';
-    if (n === 'coach') return 'Coach';
-    if (n === 'linguistics') return 'Linguistics';
-    if (n === 'analyst') return 'Analyst';
-    if (n === 'supervisor') return 'Supervisor';
-    return 'Supervisor';
-  };
+  }, [mode, transcript, role, user]);
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -137,13 +146,13 @@ export function AgentMonitor({
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-        <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-800 flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">Real-time Agent Monitor</span>
+      <div className="overflow-hidden rounded-[11px] border border-[#E4E9ED] bg-white">
+        <div className="flex items-center gap-2 border-b border-[#E4E9ED] bg-[#F5F9FF] px-4 py-2">
+          <Terminal className="w-4 h-4 text-[#607080]" />
+          <span className="font-mono text-xs uppercase tracking-widest text-[#607080]">Real-time Agent Monitor</span>
           <div className="flex gap-1.5 ml-auto">
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#DCE4EA]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#DCE4EA]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/50 animate-pulse"></div>
           </div>
         </div>
@@ -154,18 +163,18 @@ export function AgentMonitor({
         >
           {logs.map((log) => (
             <div key={log.id} className="flex gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-              <span className="text-slate-600 shrink-0">[{log.timestamp}]</span>
+              <span className="shrink-0 text-[#9AABB8]">[{log.timestamp}]</span>
               <div className={`flex items-center gap-1.5 font-bold uppercase tracking-tight shrink-0 ${getAgentColor(log.agent)}`}>
                 {getAgentIcon(log.agent)}
                 <span>{log.agent}</span>
               </div>
-              <span className="text-slate-300">{log.message}</span>
+              <span className="text-[#2E4050]">{log.message}</span>
             </div>
           ))}
           {!isFinished && (
             <div className="flex gap-3 animate-pulse">
-              <span className="text-slate-600">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
-              <span className="text-slate-500">_</span>
+              <span className="text-[#9AABB8]">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
+              <span className="text-[#607080]">_</span>
             </div>
           )}
         </div>
@@ -175,11 +184,17 @@ export function AgentMonitor({
         <div className="flex justify-center animate-in fade-in zoom-in-95 duration-500">
           <Button 
             onClick={() => onComplete(reportId)}
-            className="group h-12 px-8 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
+            className="group h-12 rounded-[9px] bg-[#1D8A5E] px-8 text-white shadow-none hover:bg-[#16744F]"
           >
             View Full Report
             <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
           </Button>
+        </div>
+      )}
+
+      {isFinished && errorMessage && (
+        <div className="rounded-[11px] border border-[#C03030]/20 bg-[#FDF0F0] p-4 text-sm leading-6 text-[#C03030]">
+          {errorMessage}
         </div>
       )}
     </div>

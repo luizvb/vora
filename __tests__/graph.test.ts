@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { graph } from '../lib/langchain/graph';
 
-// VORA Graph Test Suite (Analyzing Feature Flow)
+// CaaSy Graph Test Suite (Analyzing Feature Flow)
 // --------------------------------------------------
 // This test validates that the supervisor and specialist agents 
 // correctly route, analyze, and accumulate insights from a transcript.
 
-describe('VORA Graph & Specialist Routing (Graph Analysis)', () => {
+describe('CaaSy Graph & Specialist Routing (Graph Analysis)', () => {
   const mockTranscript = "User: I need more value for the same price. Sales: Our ROI is higher.";
 
   it('should call all required specialists in a single analysis run', async () => {
