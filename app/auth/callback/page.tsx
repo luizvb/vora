@@ -11,24 +11,47 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    const code = new URLSearchParams(window.location.search).get("code");
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const code = searchParams.get("code");
+    const authError = searchParams.get("error_description") || hashParams.get("error_description");
 
     if (!supabase) {
       return;
     }
 
     async function finishSignIn() {
+      if (authError) {
+        setMessage(authError);
+        return;
+      }
+
       if (code) {
         const { error } = await supabase!.auth.exchangeCodeForSession(code);
         if (error) {
           setMessage(error.message);
           return;
         }
+      } else {
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase!.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            setMessage(error.message);
+            return;
+          }
+        }
       }
 
-      const { data } = await supabase!.auth.getSession();
-      if (!data.session) {
-        setMessage("Sign in completed, but no session was created. Please try again from the production app URL.");
+      const session = await waitForSession();
+      if (!session) {
+        setMessage("We could not complete your sign in. Please return to CaaSy and try Google sign in again.");
         return;
       }
 
@@ -46,4 +69,17 @@ export default function AuthCallbackPage() {
       </div>
     </main>
   );
+}
+
+async function waitForSession() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) return data.session;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  return null;
 }
