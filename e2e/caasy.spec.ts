@@ -42,6 +42,20 @@ async function mockAnalyze(page: Page) {
   });
 }
 
+async function mockCoach(page: Page) {
+  await page.route("**/api/coach", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        reply: "Start with the outcome, ask for scope clarity, and keep your tone calm. One useful line: \"Can we align on what success looks like before we lock the scope?\"",
+        routedTo: ["sales", "coach"],
+        reason: "Sales coaching context detected.",
+      }),
+    });
+  });
+}
+
 function event(payload: Record<string, unknown>) {
   return `data: ${JSON.stringify(payload)}\n\n`;
 }
@@ -49,6 +63,7 @@ function event(payload: Record<string, unknown>) {
 test.describe("CaaSy", () => {
   test.beforeEach(async ({ page }) => {
     await mockAnalyze(page);
+    await mockCoach(page);
     await page.goto("/");
     await page.evaluate(() => window.localStorage.removeItem("caasy-e2e-reports"));
   });
@@ -92,14 +107,17 @@ test.describe("CaaSy", () => {
     await expect(page.getByText("Name the ask")).toBeVisible();
   });
 
-  test("coach me behaves like a chat session and saves a coaching report", async ({ page }) => {
+  test("coach me chats first and creates a report only on request", async ({ page }) => {
     await page.goto("/dashboard?role=individual&view=coach-me");
 
     await expect(page.getByText("Private coaching session")).toBeVisible();
     await page.locator("main textarea").fill("I need to ask for scope clarity without sounding defensive.");
-    await expect(page.getByLabel("Start coaching session")).toBeEnabled();
-    await page.getByLabel("Start coaching session").click();
+    await expect(page.getByLabel("Send coaching message")).toBeEnabled();
+    await page.getByLabel("Send coaching message").click();
 
+    await expect(page.getByText("Can we align on what success looks like before we lock the scope?")).toBeVisible();
+    await expect(page.getByText("View Coaching Report")).toHaveCount(0);
+    await page.getByRole("button", { name: /generate report/i }).click();
     await expect(page.getByText("CaaSy is coaching")).toBeVisible();
     await expect(page.getByText("View Coaching Report")).toBeVisible();
     await page.getByRole("button", { name: /view coaching report/i }).click();

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Send } from "lucide-react";
+import { FileText, LogOut, Send } from "lucide-react";
 import { AnalyzeForm } from "@/components/analyze/AnalyzeForm";
 import { AgentMonitor } from "@/components/analyze/AgentMonitor";
 import { CaaSyRole, normalizeRole, useUser } from "@/app/context/UserContext";
+import { saveCoachMessage } from "@/lib/coach-session-service";
 import { getRecentReports, type Report } from "@/lib/report-service";
 import { cn } from "@/lib/utils";
 import { dashboardPath, profiles } from "./data";
@@ -388,17 +389,69 @@ function InfoBlock({ title, text, color = "blue" }: { title: string; text: strin
   );
 }
 
+type CoachMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 function CoachingView({ role }: { role: CaaSyRole }) {
   const router = useRouter();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [context, setContext] = useState("");
+  const { user } = useUser();
+  const [sessionId] = useState(() => (typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}`));
+  const [messages, setMessages] = useState<CoachMessage[]>([
+    {
+      role: "assistant",
+      content: "What do you want coaching on today? Send the real context, decision, or conversation. I will help you think it through step by step.",
+    },
+  ]);
   const [draft, setDraft] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [reportTranscript, setReportTranscript] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const startSession = () => {
+  const hasUserMessages = messages.some((message) => message.role === "user");
+
+  const sendMessage = async () => {
     const trimmed = draft.trim();
-    if (!trimmed) return;
-    setContext(`Coach Me request for role ${role}:\n\n${trimmed}`);
-    setIsAnalyzing(true);
+    if (!trimmed || isSending) return;
+
+    const nextMessages: CoachMessage[] = [...messages, { role: "user", content: trimmed }];
+    setMessages(nextMessages);
+    setDraft("");
+    setIsSending(true);
+    setErrorMessage("");
+    if (user) void saveCoachMessage(user.id, sessionId, "user", trimmed);
+
+    try {
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role,
+          messages: nextMessages,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Coaching request failed with status ${response.status}.`);
+      }
+
+      const data = (await response.json()) as { reply?: string; error?: string };
+      if (data.error) throw new Error(data.error);
+
+      const reply = data.reply || "I could not generate coaching for that message. Try giving me a little more context.";
+      setMessages((current) => [...current, { role: "assistant", content: reply }]);
+      if (user) void saveCoachMessage(user.id, sessionId, "assistant", reply);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "The coaching chat failed.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const generateReport = () => {
+    if (!hasUserMessages) return;
+    setReportTranscript(formatCoachConversationForReport(messages));
   };
 
   return (
@@ -411,35 +464,61 @@ function CoachingView({ role }: { role: CaaSyRole }) {
             <div className="text-[10px] text-[#607080]">Private coaching session</div>
           </div>
         </div>
-        {!isAnalyzing ? (
+        {!reportTranscript ? (
           <>
             <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-[#F2F5F7] p-4">
-              <div className="max-w-[78%] rounded-[14px] rounded-bl-sm border border-[#E4E9ED] bg-white px-4 py-3 text-sm leading-6 text-[#2E4050]">
-                What do you want coaching on today? Send the real context, decision, or conversation. I will turn it into a saved coaching report.
-              </div>
-              {draft.trim() ? (
-                <div className="max-w-[78%] self-end whitespace-pre-wrap rounded-[14px] rounded-br-sm bg-[#1E4A6E] px-4 py-3 text-sm leading-6 text-white">
-                  {draft}
+              {messages.map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={cn(
+                    "max-w-[78%] whitespace-pre-wrap rounded-[14px] px-4 py-3 text-sm leading-6",
+                    message.role === "assistant"
+                      ? "rounded-bl-sm border border-[#E4E9ED] bg-white text-[#2E4050]"
+                      : "self-end rounded-br-sm bg-[#1E4A6E] text-white"
+                  )}
+                >
+                  {message.content}
+                </div>
+              ))}
+              {isSending ? (
+                <div className="max-w-[120px] rounded-[14px] rounded-bl-sm border border-[#E4E9ED] bg-white px-4 py-3 text-sm leading-6 text-[#607080]">
+                  Thinking...
+                </div>
+              ) : null}
+              {errorMessage ? (
+                <div className="rounded-[11px] border border-[#C03030]/20 bg-[#FDF0F0] p-3 text-sm leading-6 text-[#C03030]">
+                  {errorMessage}
                 </div>
               ) : null}
             </div>
             <div className="border-t border-[#E4E9ED] bg-white p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] text-[#607080]">Chat freely. A report is only created when you ask for one.</p>
+                <button
+                  type="button"
+                  onClick={generateReport}
+                  disabled={!hasUserMessages || isSending}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[#DCE4EA] bg-white px-3 py-2 text-[11px] font-semibold text-[#1E4A6E] transition hover:bg-[#F5F9FF] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <FileText className="size-3.5" /> Generate report
+                </button>
+              </div>
               <div className="flex items-end gap-2 rounded-[11px] border border-[#DCE4EA] bg-[#F5F9FF] p-2">
                 <textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) startSession();
+                    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) sendMessage();
                   }}
                   placeholder="Type your coaching context..."
                   className="min-h-20 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-[#1A2530] outline-none placeholder:text-[#9AABB8]"
                 />
                 <button
                   type="button"
-                  onClick={startSession}
-                  disabled={!draft.trim()}
+                  onClick={sendMessage}
+                  disabled={!draft.trim() || isSending}
                   className="mb-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1E4A6E] text-white transition hover:bg-[#2B6CB0] disabled:cursor-not-allowed disabled:opacity-45"
-                  aria-label="Start coaching session"
+                  aria-label="Send coaching message"
                 >
                   <Send className="size-4" />
                 </button>
@@ -448,19 +527,25 @@ function CoachingView({ role }: { role: CaaSyRole }) {
           </>
         ) : (
           <div className="flex-1 overflow-y-auto p-4">
-            <AgentMonitor transcript={context} mode="coach_me" onComplete={(id) => router.push(`/dashboard/${id}`)} />
+            <AgentMonitor transcript={reportTranscript} mode="coach_me" onComplete={(id) => router.push(`/dashboard/${id}`)} />
           </div>
         )}
       </div>
       <Card>
         <CardTitle>Your coaching flow</CardTitle>
         <div className="space-y-2">
-          <InfoBlock title="Personalized coaching" text="CaaSy reviews the context, finds patterns, and turns them into focused coaching guidance." />
-          <InfoBlock title="The next step" text="Every completed session creates a report you can revisit from your dashboard." color="grey" />
+          <InfoBlock title="Live coaching chat" text="CaaSy responds turn by turn, like a private coaching conversation." />
+          <InfoBlock title="Reports are optional" text="Use Generate report only when you want to turn the conversation into a saved coaching report." color="grey" />
         </div>
       </Card>
     </div>
   );
+}
+
+function formatCoachConversationForReport(messages: CoachMessage[]) {
+  return messages
+    .map((message) => `${message.role === "user" ? "User" : "CaaSy"}: ${message.content}`)
+    .join("\n\n");
 }
 
 function CoachCallFlow() {

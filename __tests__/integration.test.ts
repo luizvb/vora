@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runAnalysis } from '../lib/langchain/graph';
 import { aggregateAgentResponses } from '../lib/analysis';
+import { runCoachTurn } from '../lib/coach/orchestrator';
 
 const savedReports: Record<string, Record<string, unknown>> = {};
 
@@ -67,6 +68,16 @@ describe('CaaSy Integration Tests', () => {
     expect(agents).toContain('coach');
     expect(agents).toContain('linguistics');
     expect(agents).toContain('analyst');
+  });
+
+  it('should run Coach Me as a chat turn without creating a report', async () => {
+    const result = await runCoachTurn([
+      { role: 'user', content: 'I need to ask a buyer for scope clarity without sounding defensive.' },
+    ]);
+
+    expect(result.reply).toContain('practical');
+    expect(result.routedTo.length).toBeGreaterThan(0);
+    expect(Object.keys(savedReports)).toHaveLength(0);
   });
 
   it('should aggregate agent responses into a Unified Action Map', () => {
