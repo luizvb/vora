@@ -149,7 +149,7 @@ export function AgentMonitor({
       <div className="overflow-hidden rounded-[11px] border border-[#E4E9ED] bg-white">
         <div className="flex items-center gap-2 border-b border-[#E4E9ED] bg-[#F5F9FF] px-4 py-2">
           <Terminal className="w-4 h-4 text-[#607080]" />
-          <span className="font-mono text-xs uppercase tracking-widest text-[#607080]">Real-time Agent Monitor</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-[#607080]">CaaSy is coaching</span>
           <div className="flex gap-1.5 ml-auto">
             <div className="w-2.5 h-2.5 rounded-full bg-[#DCE4EA]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#DCE4EA]"></div>
@@ -186,7 +186,7 @@ export function AgentMonitor({
             onClick={() => onComplete(reportId)}
             className="group h-12 rounded-[9px] bg-[#1D8A5E] px-8 text-white shadow-none hover:bg-[#16744F]"
           >
-            View Full Report
+            View Coaching Report
             <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
           </Button>
         </div>

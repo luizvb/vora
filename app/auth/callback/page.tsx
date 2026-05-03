@@ -7,7 +7,7 @@ import { getSupabaseBrowserClient, getSupabaseConfig } from "@/lib/supabase";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const { isConfigured } = getSupabaseConfig();
-  const [message, setMessage] = useState(isConfigured ? "Completing sign in..." : "Supabase is not configured.");
+  const [message, setMessage] = useState(isConfigured ? "Completing sign in..." : "CaaSy is not ready to sign you in yet.");
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();

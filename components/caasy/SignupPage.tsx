@@ -40,10 +40,10 @@ export function SignupPage() {
             CaaS<span className="relative inline-block after:absolute after:left-[58%] after:top-[-0.1em] after:block after:size-[0.18em] after:-translate-x-1/2 after:rounded-full after:bg-[#7EC8F0]">y</span>
           </div>
           <h1 className="font-display text-[56px] leading-[0.98] tracking-normal text-[#1A2530] max-md:text-4xl">
-            Coaching intelligence for real sessions.
+            Coach as a Service for sales and personal growth.
           </h1>
           <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#607080]">
-            Sign in with Google, run a coaching session, and keep a clean history of AI-generated reports.
+            Improve sales conversations, prepare for tough moments, and build a private history of coaching insights that help you perform better every week.
           </p>
         </section>
 
@@ -54,13 +54,13 @@ export function SignupPage() {
               {isAuthenticated ? `Welcome, ${displayName}` : "Continue to CaaSy"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#607080]">
-              {isAuthenticated ? email : "Your sessions and reports are tied to your authenticated user account."}
+              {isAuthenticated ? email : "Your coaching sessions stay private and are saved only to your account."}
             </p>
           </div>
 
           {!isSupabaseConfigured ? (
             <div className="rounded-[11px] border border-[#C8892A]/25 bg-[#FFF4E3] p-4 text-sm leading-6 text-[#6E4A13]">
-              Supabase is not configured. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to enable Google sign in.
+              CaaSy is not ready to sign you in yet. Please contact support.
             </div>
           ) : isAuthenticated ? (
             <div className="grid gap-2">

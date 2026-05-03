@@ -90,7 +90,7 @@ describe("CaaSy UI", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("renders the same MVP navigation for every role", async () => {
+  it("renders the same coaching navigation for every role", async () => {
     render(<CaasyDashboard initialRole="sales_manager" initialView="home" />);
 
     expect(await screen.findAllByText("Dashboard")).not.toHaveLength(0);

@@ -275,7 +275,7 @@ export function ComingSoonPanel({ title = "Coming soon" }: { title?: string }) {
       </div>
       <h2 className="font-display text-2xl text-[#1A2530]">{title}</h2>
       <p className="mt-2 max-w-md text-sm leading-6 text-[#607080]">
-        This part of the CaaSy design is in place, but the workflow is not connected yet.
+        This coaching experience is being prepared for a future release. For now, use Coach my Call or Coach Me.
       </p>
     </Card>
   );

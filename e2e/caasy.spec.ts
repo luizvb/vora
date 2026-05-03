@@ -46,7 +46,7 @@ function event(payload: Record<string, unknown>) {
   return `data: ${JSON.stringify(payload)}\n\n`;
 }
 
-test.describe("CaaSy MVP", () => {
+test.describe("CaaSy", () => {
   test.beforeEach(async ({ page }) => {
     await mockAnalyze(page);
     await page.goto("/");
@@ -59,14 +59,14 @@ test.describe("CaaSy MVP", () => {
     await page.getByRole("button", { name: /open dashboard/i }).click();
 
     await expect(page).toHaveURL(/\/dashboard\?role=individual&view=home/);
-    await expect(page.getByText("CaaSy coaching dashboard")).toBeVisible();
+    await expect(page.getByText("Your CaaSy coaching dashboard")).toBeVisible();
     await expect(page.getByRole("complementary").getByText("E2E User")).toBeVisible();
   });
 
   test("dashboard renders only real empty state before any session is saved", async ({ page }) => {
     await page.goto("/dashboard?role=individual&view=home");
 
-    await expect(page.getByText("Your dashboard is empty because no session has been saved yet.")).toBeVisible();
+    await expect(page.getByText("Start your first coaching session to build a private performance history.")).toBeVisible();
     await expect(page.getByRole("main").getByRole("button", { name: "Coach my Call", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("button", { name: "Coach Me", exact: true })).toBeVisible();
     await expect(page.getByText("Pipeline Intelligence")).toHaveCount(0);
@@ -75,17 +75,17 @@ test.describe("CaaSy MVP", () => {
   test("coach my call analyzes a transcript, saves history, and opens report detail", async ({ page }) => {
     await page.goto("/dashboard?role=individual&view=coach-call");
 
-    await expect(page.getByRole("heading", { name: "Analyze a real call." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Improve your next sales call." })).toBeVisible();
     await page.locator("main textarea").fill("Seller: What outcome matters? Buyer: Scope clarity.");
     await expect(page.getByRole("button", { name: "Analyze Transcript" })).toBeEnabled();
     await page.getByRole("button", { name: "Analyze Transcript" }).click();
 
-    await expect(page.getByText("Real-time Agent Monitor")).toBeVisible();
-    await expect(page.getByText("View Full Report")).toBeVisible();
-    await page.getByRole("button", { name: /view full report/i }).click();
+    await expect(page.getByText("CaaSy is coaching")).toBeVisible();
+    await expect(page.getByText("View Coaching Report")).toBeVisible();
+    await page.getByRole("button", { name: /view coaching report/i }).click();
 
     await expect(page).toHaveURL(new RegExp(`/dashboard/${reportId}`));
-    await expect(page.getByText("CaaSy Call Coaching Report")).toBeVisible();
+    await expect(page.getByText("CaaSy Sales Call Coaching Report")).toBeVisible();
     await expect(page.getByText("Clear framing")).toBeVisible();
 
     await page.goto("/dashboard?role=individual&view=my-sessions");
@@ -100,16 +100,16 @@ test.describe("CaaSy MVP", () => {
     await expect(page.getByLabel("Start coaching session")).toBeEnabled();
     await page.getByLabel("Start coaching session").click();
 
-    await expect(page.getByText("Real-time Agent Monitor")).toBeVisible();
-    await expect(page.getByText("View Full Report")).toBeVisible();
-    await page.getByRole("button", { name: /view full report/i }).click();
+    await expect(page.getByText("CaaSy is coaching")).toBeVisible();
+    await expect(page.getByText("View Coaching Report")).toBeVisible();
+    await page.getByRole("button", { name: /view coaching report/i }).click();
 
-    await expect(page.getByText("CaaSy Coaching Session Report")).toBeVisible();
-    await expect(page.getByText("Original input")).toBeVisible();
+    await expect(page.getByText("CaaSy Personal Coaching Report")).toBeVisible();
+    await expect(page.getByText("Session input")).toBeVisible();
     await expect(page.getByText("I need to ask for scope clarity without sounding defensive.")).toBeVisible();
   });
 
-  test("unknown MVP views show coming soon", async ({ page }) => {
+  test("unknown views show coming soon", async ({ page }) => {
     await page.goto("/dashboard?role=individual&view=unknown");
 
     await expect(page.getByText("Coming soon")).toBeVisible();
@@ -120,7 +120,7 @@ test.describe("CaaSy MVP", () => {
 
     await page.goto("/dashboard?role=individual&view=home");
 
-    await expect(page.getByText("Simple functional MVP.")).toBeVisible();
+    await expect(page.getByText("Sales and personal coaching.")).toBeVisible();
     await expect(page.getByRole("button", { name: /coach my call/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /coach me/i })).toBeVisible();
   });

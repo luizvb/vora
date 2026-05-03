@@ -16,8 +16,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "CaaSy",
-  description: "Coaching intelligence for people, teams, and organizations.",
+  title: "CaaSy | Coach as a Service",
+  description: "AI coaching for better sales conversations, sharper decisions, and personal growth.",
 };
 
 import { UserProvider } from "./context/UserContext";
