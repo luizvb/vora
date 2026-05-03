@@ -67,9 +67,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      setUser(data.user);
+      setUser(data.session?.user ?? null);
       setIsAuthLoading(false);
     });
 

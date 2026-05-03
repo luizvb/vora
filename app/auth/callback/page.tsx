@@ -26,6 +26,12 @@ export default function AuthCallbackPage() {
         }
       }
 
+      const { data } = await supabase!.auth.getSession();
+      if (!data.session) {
+        setMessage("Sign in completed, but no session was created. Please try again from the production app URL.");
+        return;
+      }
+
       router.replace("/dashboard?role=individual&view=home");
     }
 
