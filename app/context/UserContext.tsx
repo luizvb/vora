@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
-import { getE2EUser, getSupabaseBrowserClient, getSupabaseConfig, getUserDisplayName, isE2EAuthEnabled } from "@/lib/supabase";
+import { getAppOrigin, getE2EUser, getSupabaseBrowserClient, getSupabaseConfig, getUserDisplayName, isE2EAuthEnabled } from "@/lib/supabase";
 
 export type CaaSyRole =
   | "individual"
@@ -89,7 +89,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const redirectTo = `${getAppOrigin()}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },

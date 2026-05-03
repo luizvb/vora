@@ -27,6 +27,15 @@ export function isE2EAuthEnabled() {
   return process.env.NEXT_PUBLIC_E2E_AUTH === "1";
 }
 
+export function getAppOrigin() {
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (configuredOrigin) return configuredOrigin.replace(/\/$/, "");
+
+  if (typeof window !== "undefined") return window.location.origin;
+
+  return "http://localhost:3000";
+}
+
 export function getE2EUser(): User {
   return {
     id: "00000000-0000-0000-0000-000000000001",
