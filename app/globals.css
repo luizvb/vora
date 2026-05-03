@@ -115,6 +115,25 @@
   }
 }
 
+button,
+[role="button"],
+a,
+summary,
+label[for],
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 button {
   font-family: inherit;
 }

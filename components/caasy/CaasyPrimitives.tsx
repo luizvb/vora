@@ -79,15 +79,12 @@ export function CardTitle({ children, className }: { children: React.ReactNode; 
 }
 
 export function StatTile({ stat, onOpen }: { stat: Stat; onOpen?: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className={cn(
-        "rounded-[10px] border border-[#E4E9ED] bg-white p-3 text-left transition hover:border-[#3B8FD4] hover:shadow-[0_2px_10px_rgba(59,143,212,0.1)]",
-        !onOpen && "cursor-default"
-      )}
-    >
+  const className = cn(
+    "rounded-[10px] border border-[#E4E9ED] bg-white p-3 text-left transition",
+    onOpen && "hover:border-[#3B8FD4] hover:shadow-[0_2px_10px_rgba(59,143,212,0.1)]"
+  );
+  const content = (
+    <>
       <div className="font-display text-[28px] leading-none text-[#1A2530]">{stat.value}</div>
       <div className="mt-1 text-[10px] text-[#9AABB8]">{stat.label}</div>
       {stat.detail ? (
@@ -95,6 +92,20 @@ export function StatTile({ stat, onOpen }: { stat: Stat; onOpen?: () => void }) 
           {stat.detail}
         </div>
       ) : null}
+    </>
+  );
+
+  if (!onOpen) {
+    return <div className={className}>{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={className}
+    >
+      {content}
     </button>
   );
 }
