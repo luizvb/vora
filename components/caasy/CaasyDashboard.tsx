@@ -188,20 +188,20 @@ function Topbar({ profile, view, displayName, onSignOut }: { profile: RoleProfil
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#E4E9ED] bg-white px-4 md:px-5">
       <div>
-        <div className="md:hidden"><CaasyLogo tagline={profile.tagline} /></div>
+        <div className="rounded-md bg-[#1E4A6E] px-3 py-1.5 font-display text-lg leading-none text-white md:hidden">CaaSy</div>
         <div className="hidden text-[13px] font-semibold text-[#1A2530] md:block">{title}</div>
       </div>
       <div className="flex items-center gap-2.5">
-        <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-semibold", profile.accent === "purple" ? "bg-[#EEF0FA] text-[#3D2F7A]" : "bg-[#EBF4FF] text-[#1E4A6E]")}>
+        <span className={cn("hidden rounded-full px-2.5 py-1 text-[10px] font-semibold sm:inline-flex", profile.accent === "purple" ? "bg-[#EEF0FA] text-[#3D2F7A]" : "bg-[#EBF4FF] text-[#1E4A6E]")}>
           {profile.pill}
         </span>
         <span className="hidden text-[11px] text-[#9AABB8] sm:inline">{displayName}</span>
         <button
           type="button"
           onClick={onSignOut}
-          className="inline-flex items-center gap-1 rounded-md border border-[#DCE4EA] px-2.5 py-1 text-[10px] font-semibold text-[#607080] transition hover:bg-[#F5F9FF] hover:text-[#1E4A6E]"
+          className="inline-flex items-center gap-1 rounded-md border border-[#DCE4EA] px-2 py-1 text-[10px] font-semibold text-[#607080] transition hover:bg-[#F5F9FF] hover:text-[#1E4A6E] sm:px-2.5"
         >
-          <LogOut className="size-3" /> Sign out
+          <LogOut className="size-3" /> <span className="hidden sm:inline">Sign out</span>
         </button>
       </div>
     </header>
@@ -344,9 +344,18 @@ function DynamicInsights({ reports }: { reports: Report[] }) {
 
 function ReportsView({ reports, compact = false }: { reports: Report[]; compact?: boolean }) {
   if (reports.length === 0) {
-    if (compact) return null;
+    if (compact) {
+      return (
+        <Card>
+          <CardTitle>Recent coaching reports</CardTitle>
+          <div className="rounded-lg border border-[#E4E9ED] bg-[#F5F9FF] p-4 text-sm leading-5 text-[#607080]">
+            No saved reports yet. Coach my Call creates your first report; Coach Me creates one only when you choose Generate report.
+          </div>
+        </Card>
+      );
+    }
     return (
-      <div className="mx-auto max-w-[980px]">
+      <div className="mx-auto max-w-[1120px]">
         <EmptyDashboard onOpen={() => undefined} />
       </div>
     );
@@ -507,11 +516,11 @@ function CoachingView({ role }: { role: CaaSyRole }) {
       <div className="flex h-[calc(100vh-84px)] min-h-[540px] flex-col overflow-hidden rounded-[11px] border border-[#E4E9ED] bg-white">
         <div className="flex items-center justify-between gap-3 border-b border-[#E4E9ED] bg-[#F5F9FF] px-4 py-3">
           <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-full bg-[#1E4A6E] text-xs font-semibold text-white">C</div>
-          <div>
-            <div className="text-sm font-semibold text-[#1A2530]">Coach Me</div>
-            <div className="text-[10px] text-[#607080]">Private coaching session</div>
-          </div>
+            <div className="flex size-9 items-center justify-center rounded-full bg-[#1E4A6E] text-xs font-semibold text-white">C</div>
+            <div>
+              <div className="text-sm font-semibold text-[#1A2530]">Coach Me</div>
+              <div className="text-[10px] text-[#607080]">Private coaching session</div>
+            </div>
           </div>
           <button
             type="button"

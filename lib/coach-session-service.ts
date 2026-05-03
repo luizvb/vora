@@ -126,7 +126,7 @@ export async function getCoachSessions(limit = 20): Promise<CoachSessionSummary[
     .schema("caasy")
     .from("agent_memories")
     .select("session_id, role, content, metadata, created_at")
-    .eq("metadata->>source", "coach_me_chat")
+    .contains("metadata", { source: "coach_me_chat" })
     .order("created_at", { ascending: false })
     .limit(400)
     .returns<CoachMemoryRow[]>();
@@ -160,7 +160,7 @@ export async function getCoachSessionMessages(sessionId: string): Promise<CoachS
     .from("agent_memories")
     .select("session_id, role, content, created_at")
     .eq("session_id", sessionId)
-    .eq("metadata->>source", "coach_me_chat")
+    .contains("metadata", { source: "coach_me_chat" })
     .order("created_at", { ascending: true })
     .returns<CoachMemoryRow[]>();
 
