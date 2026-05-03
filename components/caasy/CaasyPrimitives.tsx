@@ -64,7 +64,7 @@ export function CaasyLogo({ tagline }: { tagline: string }) {
 
 export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-[11px] border border-[#E4E9ED] bg-white p-4", className)}>
+    <div className={cn("rounded-[10px] border border-[#E4E9ED] bg-white p-3.5", className)}>
       {children}
     </div>
   );
@@ -84,7 +84,7 @@ export function StatTile({ stat, onOpen }: { stat: Stat; onOpen?: () => void }) 
       type="button"
       onClick={onOpen}
       className={cn(
-        "rounded-[10px] border border-[#E4E9ED] bg-white p-3.5 text-left transition hover:border-[#3B8FD4] hover:shadow-[0_2px_10px_rgba(59,143,212,0.1)]",
+        "rounded-[10px] border border-[#E4E9ED] bg-white p-3 text-left transition hover:border-[#3B8FD4] hover:shadow-[0_2px_10px_rgba(59,143,212,0.1)]",
         !onOpen && "cursor-default"
       )}
     >
@@ -119,7 +119,7 @@ export function WelcomeBanner({
         ? "from-[#173D2E] to-[#1E3A52]"
         : "from-[#1E4A6E] to-[#2B6CB0]";
   return (
-    <div className={cn("mb-3 flex items-center justify-between gap-4 rounded-[13px] bg-linear-to-br p-5 text-white", gradient)}>
+    <div className={cn("mb-3 flex items-center justify-between gap-4 rounded-[12px] bg-linear-to-br p-4 text-white", gradient)}>
       <div>
         <h2 className="font-display text-[20px] font-medium leading-tight">{title}</h2>
         <p className="mt-1 text-xs font-light text-white/65">{text}</p>

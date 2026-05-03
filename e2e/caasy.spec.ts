@@ -66,6 +66,7 @@ test.describe("CaaSy", () => {
     await mockCoach(page);
     await page.goto("/");
     await page.evaluate(() => window.localStorage.removeItem("caasy-e2e-reports"));
+    await page.evaluate(() => window.localStorage.removeItem("caasy-e2e-coach-messages"));
   });
 
   test("access page lets authenticated users open the dashboard", async ({ page }) => {
@@ -105,18 +106,27 @@ test.describe("CaaSy", () => {
 
     await page.goto("/dashboard?role=individual&view=my-sessions");
     await expect(page.getByText("Name the ask")).toBeVisible();
+
+    await page.goto("/dashboard?role=individual&view=coach-call");
+    await expect(page.getByText("Call history")).toBeVisible();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator("main textarea")).toHaveValue("Seller: What outcome matters? Buyer: Scope clarity.");
   });
 
-  test("coach me chats first and creates a report only on request", async ({ page }) => {
+  test("coach me sends with enter, resumes history, and creates a report only on request", async ({ page }) => {
     await page.goto("/dashboard?role=individual&view=coach-me");
 
     await expect(page.getByText("Private coaching session")).toBeVisible();
     await page.locator("main textarea").fill("I need to ask for scope clarity without sounding defensive.");
     await expect(page.getByLabel("Send coaching message")).toBeEnabled();
-    await page.getByLabel("Send coaching message").click();
+    await page.locator("main textarea").press("Enter");
 
     await expect(page.getByText("Can we align on what success looks like before we lock the scope?")).toBeVisible();
     await expect(page.getByText("View Coaching Report")).toHaveCount(0);
+    await expect(page.getByText("I need to ask for scope clarity without sounding defensive.").first()).toBeVisible();
+    await page.getByRole("button", { name: "New session" }).click();
+    await page.getByRole("button", { name: /I need to ask for scope clarity/i }).click();
+    await expect(page.locator("main").getByText("I need to ask for scope clarity without sounding defensive.").first()).toBeVisible();
     await page.getByRole("button", { name: /generate report/i }).click();
     await expect(page.getByText("CaaSy is coaching")).toBeVisible();
     await expect(page.getByText("View Coaching Report")).toBeVisible();

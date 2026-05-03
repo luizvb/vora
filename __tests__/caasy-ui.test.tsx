@@ -48,6 +48,12 @@ vi.mock("../lib/report-service", () => ({
   getRecentReports: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("../lib/coach-session-service", () => ({
+  getCoachSessions: vi.fn().mockResolvedValue([]),
+  getCoachSessionMessages: vi.fn().mockResolvedValue([]),
+  saveCoachMessage: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe("CaaSy UI", () => {
   beforeEach(() => {
     push.mockClear();
