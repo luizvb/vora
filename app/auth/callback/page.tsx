@@ -29,7 +29,7 @@ export default function AuthCallbackPage() {
       if (code) {
         const { error } = await supabase!.auth.exchangeCodeForSession(code);
         if (error) {
-          setMessage(error.message);
+          setMessage(getFriendlyAuthError(error.message));
           return;
         }
       } else {
@@ -43,7 +43,7 @@ export default function AuthCallbackPage() {
           });
 
           if (error) {
-            setMessage(error.message);
+            setMessage(getFriendlyAuthError(error.message));
             return;
           }
         }
@@ -69,6 +69,14 @@ export default function AuthCallbackPage() {
       </div>
     </main>
   );
+}
+
+function getFriendlyAuthError(message: string) {
+  if (message.toLowerCase().includes("pkce code verifier")) {
+    return "This sign in link expired. Please return to CaaSy and start Google sign in again.";
+  }
+
+  return message;
 }
 
 async function waitForSession() {
